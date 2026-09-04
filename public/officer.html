@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Officer Portal – SIH26188</title>
+    <meta name="description" content="Document upload and screening portal for field officers">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --bg: #080d18;
+            --surface: #0f1724;
+            --surface2: #162035;
+            --surface3: #1c2a42;
+            --accent: #3b82f6;
+            --accent2: #6366f1;
+            --success: #10b981;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --text: #f1f5f9;
+            --text-muted: #64748b;
+            --text-dim: #94a3b8;
+            --border: #1a2840;
+            --radius: 12px;
+        }
+
+        body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+        body::before {
+            content: '';
+            position: fixed; inset: 0;
+            background: radial-gradient(ellipse 60% 40% at 50% -10%, rgba(99,102,241,0.2) 0%, transparent 60%);
+            pointer-events: none; z-index: 0;
+        }
+
+        .header {
+            position: relative; z-index: 10;
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
+            padding: 16px 28px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .logo { display: flex; align-items: center; gap: 12px; }
+        .logo-icon {
+            width: 36px; height: 36px;
+            background: linear-gradient(135deg, var(--accent2), var(--accent));
+            border-radius: 10px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 18px;
+        }
+        .logo h1 { font-size: 15px; font-weight: 700; }
+        .logo p  { font-size: 10px; color: var(--text-muted); margin-top: 1px; }
+
+        .header-right { display: flex; align-items: center; gap: 12px; }
+        .user-name { font-size: 13px; color: var(--text-dim); }
+        .logout-btn {
+            padding: 7px 14px;
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text-muted);
+            font-size: 12px;
+            cursor: pointer;
+            font-family: inherit;
+            transition: all 0.2s;
+        }
+        .logout-btn:hover { color: var(--danger); border-color: rgba(239,68,68,0.3); }
+
+        .container {
+            position: relative; z-index: 1;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 32px 24px;
+        }
+
+        .page-header { margin-bottom: 28px; }
+        .page-header h2 { font-size: 22px; font-weight: 700; }
+        .page-header p  { font-size: 13px; color: var(--text-muted); margin-top: 5px; }
+
+        .upload-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 28px;
+            margin-bottom: 24px;
+        }
+
+        .card-title { font-size: 15px; font-weight: 700; margin-bottom: 20px; display: flex; align-items: center; gap: 8px; }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-bottom: 16px;
+        }
+
+        .form-group { display: flex; flex-direction: column; gap: 7px; }
+        label { font-size: 12px; font-weight: 500; color: var(--text-muted); }
+
+        select, input[type="text"] {
+            padding: 11px 14px;
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text);
+            font-family: inherit;
+            font-size: 13px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        select:focus, input[type="text"]:focus { border-color: var(--accent); }
+
+        .drop-zone {
+            border: 2px dashed var(--border);
+            border-radius: 12px;
+            padding: 36px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            position: relative;
+            margin-bottom: 16px;
+        }
+
+        .drop-zone:hover, .drop-zone.drag-over {
+            border-color: var(--accent);
+            background: rgba(59,130,246,0.05);
+        }
+
+        .drop-zone input[type="file"] {
+            position: absolute; inset: 0;
+            opacity: 0;
+            cursor: pointer;
+            width: 100%; height: 100%;
+        }
+
+        .drop-icon { font-size: 36px; margin-bottom: 10px; }
+        .drop-text { font-size: 14px; font-weight: 600; color: var(--text-dim); }
+        .drop-sub  { font-size: 12px; color: var(--text-muted); margin-top: 5px; }
+
+        .file-preview {
+            display: none;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            background: rgba(59,130,246,0.08);
+            border: 1px solid rgba(59,130,246,0.2);
+            border-radius: 8px;
+            margin-bottom: 16px;
+            font-size: 13px;
+        }
+
+        .file-preview.show { display: flex; }
+        .file-icon { font-size: 24px; }
+        .file-info { flex: 1; }
+        .file-name { font-weight: 600; }
+        .file-size { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+
+        .btn-upload {
+            width: 100%;
+            padding: 13px;
+            background: linear-gradient(135deg, var(--accent2), var(--accent));
+            color: #fff;
+            border: none;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            font-family: inherit;
+            transition: all 0.25s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        .btn-upload:hover { transform: translateY(-1px); box-shadow: 0 8px 25px rgba(59,130,246,0.3); }
+        .btn-upload:disabled { opacity: 0.6; cursor: not-allowed; transform: none; box-shadow: none; }
+
+        /* RESULT CARD */
+        .result-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 24px;
+            display: none;
+            animation: fadeIn 0.4s ease;
+        }
+        .result-card.show { display: block; }
+        @keyframes fadeIn { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:none; } }
+
+        .result-header { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }
+        .result-icon-box {
+            width: 44px; height: 44px;
+            border-radius: 12px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 22px;
+        }
+
+        .result-status-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .result-stat {
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 14px;
+        }
+
+        .rs-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); margin-bottom: 6px; font-weight: 600; }
+        .rs-value { font-size: 16px; font-weight: 700; }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+        .badge-green  { background: rgba(16,185,129,0.15); color: #6ee7b7; border: 1px solid rgba(16,185,129,0.25); }
+        .badge-red    { background: rgba(239,68,68,0.15);  color: #fca5a5; border: 1px solid rgba(239,68,68,0.25); }
+        .badge-yellow { background: rgba(245,158,11,0.15); color: #fcd34d; border: 1px solid rgba(245,158,11,0.25); }
+        .badge-blue   { background: rgba(59,130,246,0.15); color: #93c5fd; border: 1px solid rgba(59,130,246,0.25); }
+        .badge-gray   { background: rgba(100,116,139,0.15);color: #94a3b8; border: 1px solid rgba(100,116,139,0.25); }
+
+        .process-btn {
+            padding: 10px 22px;
+            background: rgba(16,185,129,0.15);
+            color: #6ee7b7;
+            border: 1px solid rgba(16,185,129,0.3);
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            font-family: inherit;
+            transition: all 0.2s;
+        }
+        .process-btn:hover { background: rgba(16,185,129,0.25); }
+        .process-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        .flags-list { margin-top: 16px; display: flex; flex-direction: column; gap: 8px; }
+        .flag-item {
+            display: flex; gap: 10px; align-items: flex-start;
+            padding: 10px 14px;
+            background: rgba(239,68,68,0.07);
+            border: 1px solid rgba(239,68,68,0.18);
+            border-radius: 8px;
+            font-size: 12px;
+        }
+
+        .alert {
+            padding: 12px 16px;
+            border-radius: 10px;
+            font-size: 13px;
+            margin-bottom: 16px;
+            display: none;
+        }
+        .alert.show { display: block; }
+        .alert.error   { background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.25); color: #fca5a5; }
+        .alert.success { background: rgba(16,185,129,0.1); border: 1px solid rgba(16,185,129,0.25); color: #6ee7b7; }
+
+        .spinner {
+            width: 18px; height: 18px;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-top-color: #fff;
+            border-radius: 50%;
+            animation: spin 0.7s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="logo">
+            <div class="logo-icon">🛡️</div>
+            <div>
+                <h1>SIH26188</h1>
+                <p>Document Screening Portal</p>
+            </div>
+        </div>
+        <div class="header-right">
+            <span class="user-name" id="userName">Loading...</span>
+            <button class="logout-btn" onclick="logout()">Sign out</button>
+        </div>
+    </header>
+
+    <div class="container">
+        <div class="page-header">
+            <h2>📤 Submit Document for Screening</h2>
+            <p>Upload an identity document to run AI-based fake document detection, OCR extraction, and risk assessment.</p>
+        </div>
+
+        <div class="upload-card">
+            <div class="card-title">📋 Document Details</div>
+
+            <div class="alert error" id="alertError"></div>
+            <div class="alert success" id="alertSuccess"></div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Document Type</label>
+                    <select id="docType">
+                        <option value="passport">Passport</option>
+                        <option value="aadhaar">Aadhaar Card</option>
+                        <option value="pan">PAN Card</option>
+                        <option value="driving_license">Driving License</option>
+                        <option value="voter_id">Voter ID</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="drop-zone" id="dropZone">
+                <input type="file" id="fileInput" accept="image/*,.pdf" onchange="handleFile(this.files[0])">
+                <div class="drop-icon">📁</div>
+                <div class="drop-text">Drag & drop or click to select document</div>
+                <div class="drop-sub">Supports JPG, PNG, PDF (max 10MB)</div>
+            </div>
+
+            <div class="file-preview" id="filePreview">
+                <div class="file-icon">📄</div>
+                <div class="file-info">
+                    <div class="file-name" id="fileName">–</div>
+                    <div class="file-size" id="fileSize">–</div>
+                </div>
+            </div>
+
+            <button class="btn-upload" id="uploadBtn" onclick="uploadDocument()" disabled>
+                <span id="uploadBtnText">📤 Upload Document</span>
+                <div class="spinner" id="uploadSpinner" style="display:none"></div>
+            </button>
+        </div>
+
+        <!-- RESULT CARD -->
+        <div class="result-card" id="resultCard">
+            <div class="result-header">
+                <div class="result-icon-box" id="resultIconBox" style="background:rgba(59,130,246,0.15)">📄</div>
+                <div>
+                    <div style="font-size:16px;font-weight:700" id="resultTitle">Upload Complete</div>
+                    <div style="font-size:12px;color:var(--text-muted);margin-top:3px" id="resultSub">–</div>
+                </div>
+                <div style="margin-left:auto">
+                    <button class="process-btn" id="processBtn" onclick="runScreening()">🔬 Run AI Screening</button>
+                </div>
+            </div>
+
+            <div class="result-status-grid" id="statusGrid"></div>
+
+            <div id="flagsContainer" style="display:none">
+                <div style="font-size:13px;font-weight:600;margin-bottom:8px">⚠️ Risk Flags</div>
+                <div class="flags-list" id="flagsList"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API = '';
+        const token = localStorage.getItem('token');
+        if (!token) { window.location.href = '/index.html'; }
+
+        const user = JSON.parse(localStorage.getItem('user') || '{}');
+        document.getElementById('userName').textContent = user.name || 'Officer';
+
+        let currentDocId = null;
+        let selectedFile = null;
+
+        function logout() {
+            localStorage.clear();
+            window.location.href = '/index.html';
+        }
+
+        function showAlert(type, msg) {
+            ['alertError','alertSuccess'].forEach(id => {
+                document.getElementById(id).classList.remove('show');
+            });
+            const el = document.getElementById(type === 'error' ? 'alertError' : 'alertSuccess');
+            el.textContent = msg;
+            el.classList.add('show');
+        }
+
+        function handleFile(file) {
+            if (!file) return;
+            selectedFile = file;
+            document.getElementById('fileName').textContent = file.name;
+            document.getElementById('fileSize').textContent = (file.size / 1024).toFixed(1) + ' KB';
+            document.getElementById('filePreview').classList.add('show');
+            document.getElementById('uploadBtn').disabled = false;
+        }
+
+        // Drag & drop
+        const dropZone = document.getElementById('dropZone');
+        dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+        dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+        dropZone.addEventListener('drop', e => {
+            e.preventDefault();
+            dropZone.classList.remove('drag-over');
+            if (e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]);
+        });
+
+        async function uploadDocument() {
+            if (!selectedFile) return;
+            const btn = document.getElementById('uploadBtn');
+            btn.disabled = true;
+            document.getElementById('uploadBtnText').style.display = 'none';
+            document.getElementById('uploadSpinner').style.display = 'block';
+
+            const formData = new FormData();
+            formData.append('document', selectedFile);
+            formData.append('documentType', document.getElementById('docType').value);
+
+            try {
+                const res = await fetch(`${API}/api/documents/upload`, {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}` },
+                    body: formData
+                });
+                const data = await res.json();
+
+                if (data.success) {
+                    currentDocId = data.document._id;
+                    showAlert('success', 'Document uploaded successfully! Run AI screening below.');
+                    showResult(data.document, false);
+                } else {
+                    showAlert('error', data.message || 'Upload failed');
+                    btn.disabled = false;
+                }
+            } catch (e) {
+                showAlert('error', 'Connection error. Please try again.');
+                btn.disabled = false;
+            } finally {
+                document.getElementById('uploadBtnText').style.display = '';
+                document.getElementById('uploadSpinner').style.display = 'none';
+            }
+        }
+
+        async function runScreening() {
+            if (!currentDocId) return;
+            const btn = document.getElementById('processBtn');
+            btn.disabled = true;
+            btn.textContent = '⏳ Running AI screening...';
+
+            try {
+                const res = await fetch(`${API}/api/documents/${currentDocId}/process`, {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
+                });
+                const data = await res.json();
+
+                if (data.success) {
+                    showResult({
+                        _id: currentDocId,
+                        ocrStatus: data.ocrStatus,
+                        validationStatus: data.validationStatus,
+                        fakeDocumentStatus: data.fakeDocumentStatus,
+                        riskScore: data.riskScore,
+                        riskLevel: data.riskLevel,
+                        riskReasons: data.riskReasons,
+                        reviewStatus: data.reviewStatus
+                    }, true);
+                    btn.textContent = '✅ Screening Complete';
+                } else {
+                    showAlert('error', data.message || 'Screening failed');
+                    btn.disabled = false;
+                    btn.textContent = '🔬 Run AI Screening';
+                }
+            } catch (e) {
+                showAlert('error', 'Screening error. Please try again.');
+                btn.disabled = false;
+                btn.textContent = '🔬 Run AI Screening';
+            }
+        }
+
+        function showResult(doc, screened) {
+            document.getElementById('resultCard').classList.add('show');
+            document.getElementById('resultTitle').textContent = screened ? 'Screening Complete' : 'Upload Successful';
+            document.getElementById('resultSub').textContent = screened ? 'AI analysis has been performed on your document' : 'Click "Run AI Screening" to analyze the document';
+
+            const grid = document.getElementById('statusGrid');
+            grid.innerHTML = `
+                <div class="result-stat">
+                    <div class="rs-label">OCR Status</div>
+                    <div class="rs-value">${statusBadge(doc.ocrStatus)}</div>
+                </div>
+                <div class="result-stat">
+                    <div class="rs-label">Validation</div>
+                    <div class="rs-value">${validBadge(doc.validationStatus)}</div>
+                </div>
+                <div class="result-stat">
+                    <div class="rs-label">Fake Detection</div>
+                    <div class="rs-value">${fakeBadge(doc.fakeDocumentStatus)}</div>
+                </div>
+                <div class="result-stat">
+                    <div class="rs-label">Risk Score</div>
+                    <div class="rs-value" style="font-size:24px;color:${riskColor(doc.riskLevel)}">${doc.riskScore ?? '–'}</div>
+                </div>
+                <div class="result-stat">
+                    <div class="rs-label">Risk Level</div>
+                    <div class="rs-value">${riskBadge(doc.riskLevel)}</div>
+                </div>
+                <div class="result-stat">
+                    <div class="rs-label">Review Status</div>
+                    <div class="rs-value">${reviewBadge(doc.reviewStatus)}</div>
+                </div>
+            `;
+
+            const flags = doc.riskReasons || [];
+            const fc = document.getElementById('flagsContainer');
+            if (flags.length > 0) {
+                document.getElementById('flagsList').innerHTML = flags.map(f =>
+                    `<div class="flag-item"><span>⚠️</span><span>${f}</span></div>`
+                ).join('');
+                fc.style.display = '';
+            } else {
+                fc.style.display = 'none';
+            }
+        }
+
+        function riskColor(l) {
+            if (l === 'CRITICAL') return '#ef4444';
+            if (l === 'HIGH') return '#f59e0b';
+            if (l === 'MEDIUM') return '#3b82f6';
+            return '#10b981';
+        }
+
+        function statusBadge(s) {
+            const m = { COMPLETED:'badge-green', FAILED:'badge-red', PENDING:'badge-gray' };
+            return `<span class="badge ${m[s]||'badge-gray'}">${s||'–'}</span>`;
+        }
+        function validBadge(s) {
+            const m = { VALIDATED:'badge-green', REJECTED:'badge-red', NEEDS_REVIEW:'badge-yellow', PENDING:'badge-gray' };
+            return `<span class="badge ${m[s]||'badge-gray'}">${s||'–'}</span>`;
+        }
+        function fakeBadge(s) {
+            return `<span class="badge ${s==='SUSPICIOUS'?'badge-red':s==='GENUINE'?'badge-green':'badge-gray'}">${s||'–'}</span>`;
+        }
+        function riskBadge(s) {
+            const m = { CRITICAL:'badge-red', HIGH:'badge-yellow', MEDIUM:'badge-blue', LOW:'badge-green' };
+            return `<span class="badge ${m[s]||'badge-gray'}">${s||'–'}</span>`;
+        }
+        function reviewBadge(s) {
+            const m = { APPROVED:'badge-green', REJECTED:'badge-red', FALSE_POSITIVE:'badge-blue', PENDING:'badge-yellow' };
+            return `<span class="badge ${m[s]||'badge-gray'}">${s||'–'}</span>`;
+        }
+    </script>
+</body>
+</html>

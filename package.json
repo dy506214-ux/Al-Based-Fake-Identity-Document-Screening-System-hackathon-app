@@ -1,0 +1,46 @@
+{
+  "name": "sih26188",
+  "version": "1.0.0",
+  "description": "",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js",
+    "test": "node test/runTests.js",
+    "test:phase1": "node test/phase1.test.js",
+    "test:phase2": "node test/phase2.test.js",
+    "test:phase3": "node test/phase3.test.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dy506214-ux/hackathon-web-admin-panel-project.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/dy506214-ux/hackathon-web-admin-panel-project/issues"
+  },
+  "homepage": "https://github.com/dy506214-ux/hackathon-web-admin-panel-project#readme",
+  "dependencies": {
+    "@tensorflow/tfjs": "^4.22.0",
+    "@tensorflow/tfjs-backend-wasm": "^4.22.0",
+    "@tensorflow/tfjs-converter": "^4.22.0",
+    "@tensorflow/tfjs-core": "^4.22.0",
+    "@vladmandic/human": "^3.3.6",
+    "bcryptjs": "^3.0.3",
+    "canvas": "^3.2.3",
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "express-mongo-sanitize": "^2.2.0",
+    "express-rate-limit": "^8.7.0",
+    "helmet": "^8.3.0",
+    "jsonwebtoken": "^9.0.3",
+    "mongoose": "^9.9.3",
+    "multer": "^2.2.0",
+    "sharp": "^0.34.5",
+    "tesseract.js": "^7.0.0"
+  }
+}
