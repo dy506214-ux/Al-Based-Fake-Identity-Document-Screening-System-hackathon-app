@@ -1,0 +1,943 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard – SIH26188</title>
+    <meta name="description" content="Admin dashboard for AI-Based Fake Identity & Document Screening System">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --bg: #080d18;
+            --surface: #0f1724;
+            --surface2: #162035;
+            --surface3: #1c2a42;
+            --accent: #3b82f6;
+            --accent2: #6366f1;
+            --success: #10b981;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --critical: #dc2626;
+            --text: #f1f5f9;
+            --text-muted: #64748b;
+            --text-dim: #94a3b8;
+            --border: #1a2840;
+            --radius: 12px;
+            --sidebar-w: 240px;
+        }
+
+        body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; display: flex; }
+
+        /* SIDEBAR */
+        .sidebar {
+            width: var(--sidebar-w);
+            background: var(--surface);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            position: fixed;
+            top: 0; left: 0; bottom: 0;
+            z-index: 100;
+        }
+
+        .sidebar-logo {
+            padding: 22px 20px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .sidebar-logo .icon {
+            width: 38px; height: 38px;
+            background: linear-gradient(135deg, var(--accent2), var(--accent));
+            border-radius: 10px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 18px; flex-shrink: 0;
+        }
+
+        .sidebar-logo h1 { font-size: 14px; font-weight: 700; line-height: 1.2; }
+        .sidebar-logo p  { font-size: 10px; color: var(--text-muted); margin-top: 2px; }
+
+        .sidebar-nav { padding: 16px 12px; flex: 1; overflow-y: auto; }
+
+        .nav-section-label {
+            font-size: 10px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-muted);
+            padding: 0 10px;
+            margin: 16px 0 8px;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 13.5px;
+            font-weight: 500;
+            color: var(--text-dim);
+            transition: all 0.18s ease;
+            text-decoration: none;
+            border: 1px solid transparent;
+        }
+
+        .nav-item:hover { background: var(--surface2); color: var(--text); }
+        .nav-item.active { background: rgba(59,130,246,0.14); color: var(--accent); border-color: rgba(59,130,246,0.2); }
+        .nav-item .icon { font-size: 16px; width: 20px; text-align: center; }
+
+        .sidebar-footer {
+            padding: 16px;
+            border-top: 1px solid var(--border);
+        }
+
+        .user-chip {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 12px;
+            background: var(--surface2);
+            border-radius: 10px;
+        }
+
+        .avatar {
+            width: 32px; height: 32px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--accent2), var(--accent));
+            display: flex; align-items: center; justify-content: center;
+            font-size: 13px; font-weight: 700;
+            flex-shrink: 0;
+        }
+
+        .user-info { flex: 1; min-width: 0; }
+        .user-info .name { font-size: 12px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .user-info .role { font-size: 10px; color: var(--accent); }
+
+        .logout-btn {
+            background: none; border: none; color: var(--text-muted); cursor: pointer;
+            font-size: 16px; padding: 4px; border-radius: 6px; transition: all 0.15s;
+        }
+        .logout-btn:hover { color: var(--danger); background: rgba(239,68,68,0.1); }
+
+        /* MAIN CONTENT */
+        .main { margin-left: var(--sidebar-w); flex: 1; display: flex; flex-direction: column; min-height: 100vh; }
+
+        .topbar {
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
+            padding: 16px 28px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky; top: 0; z-index: 50;
+        }
+
+        .page-title { font-size: 18px; font-weight: 700; }
+        .page-sub   { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+
+        .topbar-right { display: flex; align-items: center; gap: 12px; }
+
+        .refresh-btn {
+            padding: 8px 16px;
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text-dim);
+            font-size: 13px;
+            cursor: pointer;
+            font-family: inherit;
+            transition: all 0.2s;
+            display: flex; align-items: center; gap: 6px;
+        }
+        .refresh-btn:hover { background: var(--surface3); color: var(--text); }
+
+        .content { padding: 28px; flex: 1; }
+
+        /* STATS GRID */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 16px;
+            margin-bottom: 28px;
+        }
+
+        .stat-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 20px;
+            position: relative;
+            overflow: hidden;
+            transition: transform 0.2s, border-color 0.2s;
+        }
+
+        .stat-card:hover { transform: translateY(-2px); border-color: rgba(59,130,246,0.3); }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0; right: 0;
+            width: 60px; height: 60px;
+            border-radius: 50%;
+            transform: translate(20px, -20px);
+            opacity: 0.15;
+        }
+
+        .stat-card.blue::before   { background: var(--accent); }
+        .stat-card.green::before  { background: var(--success); }
+        .stat-card.red::before    { background: var(--danger); }
+        .stat-card.yellow::before { background: var(--warning); }
+        .stat-card.purple::before { background: var(--accent2); }
+
+        .stat-icon { font-size: 22px; margin-bottom: 12px; }
+        .stat-value { font-size: 32px; font-weight: 700; letter-spacing: -1px; }
+        .stat-label { font-size: 12px; color: var(--text-muted); margin-top: 4px; font-weight: 500; }
+        .stat-sub   { font-size: 11px; color: var(--text-muted); margin-top: 8px; }
+
+        /* SECTION CARDS */
+        .section {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            margin-bottom: 24px;
+        }
+
+        .section-header {
+            padding: 18px 22px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .section-title { font-size: 15px; font-weight: 600; }
+        .section-sub   { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+
+        /* TABLES */
+        .table-wrap { overflow-x: auto; }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+
+        thead th {
+            padding: 12px 16px;
+            text-align: left;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-muted);
+            background: var(--surface2);
+            border-bottom: 1px solid var(--border);
+        }
+
+        tbody tr {
+            border-bottom: 1px solid rgba(26,40,64,0.6);
+            transition: background 0.15s;
+        }
+
+        tbody tr:last-child { border-bottom: none; }
+        tbody tr:hover { background: rgba(28,42,66,0.6); }
+
+        td { padding: 13px 16px; vertical-align: middle; }
+
+        /* BADGES */
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 0.3px;
+        }
+
+        .badge-blue     { background: rgba(59,130,246,0.15); color: #93c5fd; border: 1px solid rgba(59,130,246,0.25); }
+        .badge-green    { background: rgba(16,185,129,0.15); color: #6ee7b7; border: 1px solid rgba(16,185,129,0.25); }
+        .badge-red      { background: rgba(239,68,68,0.15);  color: #fca5a5; border: 1px solid rgba(239,68,68,0.25); }
+        .badge-yellow   { background: rgba(245,158,11,0.15); color: #fcd34d; border: 1px solid rgba(245,158,11,0.25); }
+        .badge-purple   { background: rgba(99,102,241,0.15); color: #a5b4fc; border: 1px solid rgba(99,102,241,0.25); }
+        .badge-gray     { background: rgba(100,116,139,0.15);color: #94a3b8; border: 1px solid rgba(100,116,139,0.25); }
+
+        /* BUTTONS */
+        .btn-sm {
+            padding: 5px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 500;
+            cursor: pointer;
+            border: 1px solid transparent;
+            font-family: inherit;
+            transition: all 0.18s;
+        }
+
+        .btn-primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+        .btn-primary:hover { background: #2563eb; }
+        .btn-danger  { background: rgba(239,68,68,0.15); color: #fca5a5; border-color: rgba(239,68,68,0.3); }
+        .btn-danger:hover { background: rgba(239,68,68,0.25); }
+        .btn-success { background: rgba(16,185,129,0.15); color: #6ee7b7; border-color: rgba(16,185,129,0.3); }
+        .btn-success:hover { background: rgba(16,185,129,0.25); }
+
+        /* LOADING */
+        .skeleton {
+            background: linear-gradient(90deg, var(--surface2) 25%, var(--surface3) 50%, var(--surface2) 75%);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s infinite;
+            border-radius: 6px;
+            height: 14px;
+        }
+        @keyframes shimmer { from { background-position: 200% 0; } to { background-position: -200% 0; } }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: var(--text-muted);
+        }
+
+        .empty-state .icon { font-size: 40px; margin-bottom: 12px; }
+        .empty-state p { font-size: 13px; }
+
+        /* MODAL */
+        .modal-overlay {
+            position: fixed; inset: 0;
+            background: rgba(0,0,0,0.7);
+            display: none; align-items: center; justify-content: center;
+            z-index: 1000;
+        }
+
+        .modal-overlay.open { display: flex; }
+
+        .modal {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 28px;
+            width: 100%;
+            max-width: 440px;
+            animation: slideUp 0.25s ease;
+        }
+
+        @keyframes slideUp { from { opacity:0; transform: translateY(20px); } to { opacity:1; transform: translateY(0); } }
+
+        .modal-title { font-size: 17px; font-weight: 700; margin-bottom: 6px; }
+        .modal-sub   { font-size: 13px; color: var(--text-muted); margin-bottom: 24px; }
+
+        .form-group { margin-bottom: 18px; }
+        label { display: block; font-size: 12px; font-weight: 500; color: var(--text-muted); margin-bottom: 7px; }
+
+        select, input[type="text"], input[type="email"] {
+            width: 100%;
+            padding: 11px 14px;
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text);
+            font-size: 13px;
+            font-family: inherit;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        select:focus, input:focus { border-color: var(--accent); }
+
+        .modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 24px; }
+
+        .btn-cancel {
+            padding: 9px 18px;
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text-muted);
+            font-size: 13px;
+            cursor: pointer;
+            font-family: inherit;
+        }
+
+        .btn-save {
+            padding: 9px 20px;
+            background: var(--accent);
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            font-family: inherit;
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 24px; right: 24px;
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 14px 20px;
+            font-size: 13px;
+            z-index: 2000;
+            transform: translateY(80px);
+            opacity: 0;
+            transition: all 0.3s ease;
+            max-width: 320px;
+        }
+
+        .toast.show { transform: translateY(0); opacity: 1; }
+        .toast.success { border-color: rgba(16,185,129,0.4); color: #6ee7b7; }
+        .toast.error   { border-color: rgba(239,68,68,0.4);  color: #fca5a5; }
+
+        /* TABS */
+        .tabs { display: flex; gap: 4px; padding: 16px 22px 0; }
+        .tab {
+            padding: 8px 16px;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            border-radius: 8px 8px 0 0;
+            color: var(--text-muted);
+            border: 1px solid transparent;
+            border-bottom: none;
+            background: transparent;
+            font-family: inherit;
+            transition: all 0.2s;
+        }
+        .tab.active { background: var(--surface2); color: var(--text); border-color: var(--border); }
+    </style>
+</head>
+<body>
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+        <div class="sidebar-logo">
+            <div class="icon">🛡️</div>
+            <div>
+                <h1>SIH26188</h1>
+                <p>Admin Dashboard</p>
+            </div>
+        </div>
+
+        <nav class="sidebar-nav">
+            <div class="nav-section-label">Overview</div>
+            <a class="nav-item active" id="nav-overview" onclick="showPage('overview')">
+                <span class="icon">📊</span> Dashboard
+            </a>
+
+            <div class="nav-section-label">Management</div>
+            <a class="nav-item" id="nav-users" onclick="showPage('users')">
+                <span class="icon">👥</span> Users
+            </a>
+            <a class="nav-item" id="nav-documents" onclick="showPage('documents')">
+                <span class="icon">📄</span> Documents
+            </a>
+            <a class="nav-item" href="review.html">
+                <span class="icon">🔍</span> Review Queue
+            </a>
+
+            <div class="nav-section-label">System</div>
+            <a class="nav-item" id="nav-audit" onclick="showPage('audit')">
+                <span class="icon">📋</span> Audit Logs
+            </a>
+        </nav>
+
+        <div class="sidebar-footer">
+            <div class="user-chip">
+                <div class="avatar" id="avatarInitial">A</div>
+                <div class="user-info">
+                    <div class="name" id="userName">Loading...</div>
+                    <div class="role" id="userRole">ADMIN</div>
+                </div>
+                <button class="logout-btn" onclick="logout()" title="Logout">⏏</button>
+            </div>
+        </div>
+    </aside>
+
+    <!-- MAIN -->
+    <main class="main">
+        <div class="topbar">
+            <div>
+                <div class="page-title" id="pageTitle">Dashboard</div>
+                <div class="page-sub" id="pageSub">System-wide overview</div>
+            </div>
+            <div class="topbar-right">
+                <button class="refresh-btn" onclick="refreshCurrent()">↻ Refresh</button>
+            </div>
+        </div>
+
+        <div class="content">
+
+            <!-- OVERVIEW PAGE -->
+            <div id="page-overview">
+                <div class="stats-grid" id="statsGrid">
+                    <div class="stat-card blue">
+                        <div class="stat-icon">👥</div>
+                        <div class="stat-value" id="st-users">–</div>
+                        <div class="stat-label">Total Users</div>
+                        <div class="stat-sub" id="st-users-sub">–</div>
+                    </div>
+                    <div class="stat-card green">
+                        <div class="stat-icon">📄</div>
+                        <div class="stat-value" id="st-docs">–</div>
+                        <div class="stat-label">Total Documents</div>
+                        <div class="stat-sub" id="st-docs-sub">–</div>
+                    </div>
+                    <div class="stat-card yellow">
+                        <div class="stat-icon">⏳</div>
+                        <div class="stat-value" id="st-pending">–</div>
+                        <div class="stat-label">Pending Review</div>
+                        <div class="stat-sub">Awaiting human decision</div>
+                    </div>
+                    <div class="stat-card red">
+                        <div class="stat-icon">⚠️</div>
+                        <div class="stat-value" id="st-suspicious">–</div>
+                        <div class="stat-label">Suspicious Docs</div>
+                        <div class="stat-sub" id="st-critical">– critical</div>
+                    </div>
+                    <div class="stat-card purple">
+                        <div class="stat-icon">✅</div>
+                        <div class="stat-value" id="st-approved">–</div>
+                        <div class="stat-label">Approved</div>
+                        <div class="stat-sub" id="st-rejected">– rejected</div>
+                    </div>
+                </div>
+
+                <!-- Recent Audit Logs -->
+                <div class="section">
+                    <div class="section-header">
+                        <div>
+                            <div class="section-title">Recent Activity</div>
+                            <div class="section-sub">Latest 10 audit events</div>
+                        </div>
+                    </div>
+                    <div class="table-wrap">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Action</th>
+                                    <th>Resource</th>
+                                    <th>Actor</th>
+                                    <th>Status</th>
+                                    <th>Time</th>
+                                </tr>
+                            </thead>
+                            <tbody id="recentAuditBody">
+                                <tr><td colspan="5"><div class="empty-state"><p>Loading...</p></div></td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- USERS PAGE -->
+            <div id="page-users" style="display:none">
+                <div class="section">
+                    <div class="section-header">
+                        <div>
+                            <div class="section-title">User Management</div>
+                            <div class="section-sub">Manage officer, reviewer, and admin accounts</div>
+                        </div>
+                        <div style="display:flex;gap:8px;align-items:center;">
+                            <select id="filterRole" style="padding:7px 12px;font-size:12px;width:130px;" onchange="loadUsers()">
+                                <option value="">All Roles</option>
+                                <option value="OFFICER">OFFICER</option>
+                                <option value="REVIEWER">REVIEWER</option>
+                                <option value="ADMIN">ADMIN</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="table-wrap">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Email</th>
+                                    <th>Role</th>
+                                    <th>Status</th>
+                                    <th>Joined</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="usersBody">
+                                <tr><td colspan="6"><div class="empty-state"><p>Loading...</p></div></td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- DOCUMENTS PAGE -->
+            <div id="page-documents" style="display:none">
+                <div class="section">
+                    <div class="section-header">
+                        <div>
+                            <div class="section-title">All Documents</div>
+                            <div class="section-sub">Complete document registry with screening results</div>
+                        </div>
+                        <select id="filterDocStatus" style="padding:7px 12px;font-size:12px;width:150px;" onchange="loadDocuments()">
+                            <option value="">All Status</option>
+                            <option value="PENDING">PENDING</option>
+                            <option value="APPROVED">APPROVED</option>
+                            <option value="REJECTED">REJECTED</option>
+                        </select>
+                    </div>
+                    <div class="table-wrap">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Document</th>
+                                    <th>Uploaded By</th>
+                                    <th>Type</th>
+                                    <th>Validation</th>
+                                    <th>Risk</th>
+                                    <th>Fake Detection</th>
+                                    <th>Review</th>
+                                    <th>Date</th>
+                                </tr>
+                            </thead>
+                            <tbody id="documentsBody">
+                                <tr><td colspan="8"><div class="empty-state"><p>Loading...</p></div></td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- AUDIT LOGS PAGE -->
+            <div id="page-audit" style="display:none">
+                <div class="section">
+                    <div class="section-header">
+                        <div>
+                            <div class="section-title">Audit Logs</div>
+                            <div class="section-sub">Complete tamper-proof system audit trail</div>
+                        </div>
+                    </div>
+                    <div class="table-wrap">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Action</th>
+                                    <th>Resource</th>
+                                    <th>Resource ID</th>
+                                    <th>Actor</th>
+                                    <th>Role</th>
+                                    <th>Status</th>
+                                    <th>IP Address</th>
+                                    <th>Timestamp</th>
+                                </tr>
+                            </thead>
+                            <tbody id="auditBody">
+                                <tr><td colspan="8"><div class="empty-state"><p>Loading...</p></div></td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+        </div><!-- /content -->
+    </main>
+
+    <!-- EDIT USER MODAL -->
+    <div class="modal-overlay" id="editUserModal">
+        <div class="modal">
+            <div class="modal-title">Edit User</div>
+            <div class="modal-sub" id="editUserEmail">–</div>
+            <div class="form-group">
+                <label>Role</label>
+                <select id="editRole">
+                    <option value="OFFICER">OFFICER</option>
+                    <option value="REVIEWER">REVIEWER</option>
+                    <option value="ADMIN">ADMIN</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Account Status</label>
+                <select id="editActive">
+                    <option value="true">Active</option>
+                    <option value="false">Inactive</option>
+                </select>
+            </div>
+            <div class="modal-actions">
+                <button class="btn-cancel" onclick="closeModal()">Cancel</button>
+                <button class="btn-save" onclick="saveUser()">Save Changes</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- TOAST -->
+    <div class="toast" id="toast"></div>
+
+    <script>
+        const API = '';
+        let token = localStorage.getItem('token');
+        let currentUserId = null;
+        let currentPage = 'overview';
+
+        // Guard: redirect if no token
+        if (!token) { window.location.href = '/index.html'; }
+
+        const user = JSON.parse(localStorage.getItem('user') || '{}');
+        if (user.name) {
+            document.getElementById('userName').textContent = user.name;
+            document.getElementById('userRole').textContent = user.role || 'ADMIN';
+            document.getElementById('avatarInitial').textContent = user.name[0].toUpperCase();
+        }
+
+        function authHeaders() {
+            return { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' };
+        }
+
+        function logout() {
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            window.location.href = '/index.html';
+        }
+
+        function showToast(msg, type = 'success') {
+            const t = document.getElementById('toast');
+            t.textContent = msg;
+            t.className = `toast ${type} show`;
+            setTimeout(() => { t.className = 'toast'; }, 3500);
+        }
+
+        function showPage(page) {
+            ['overview','users','documents','audit'].forEach(p => {
+                document.getElementById(`page-${p}`).style.display = p === page ? '' : 'none';
+                document.getElementById(`nav-${p}`)?.classList.toggle('active', p === page);
+            });
+            currentPage = page;
+            const titles = {
+                overview: ['Dashboard', 'System-wide overview'],
+                users: ['User Management', 'Manage system users'],
+                documents: ['Documents', 'Complete document registry'],
+                audit: ['Audit Logs', 'Full system audit trail']
+            };
+            document.getElementById('pageTitle').textContent = titles[page][0];
+            document.getElementById('pageSub').textContent = titles[page][1];
+            refreshCurrent();
+        }
+
+        function refreshCurrent() {
+            if (currentPage === 'overview') loadStats();
+            else if (currentPage === 'users') loadUsers();
+            else if (currentPage === 'documents') loadDocuments();
+            else if (currentPage === 'audit') loadAudit();
+        }
+
+        // ─── STATS ───────────────────────────────────────────────────
+        async function loadStats() {
+            try {
+                const res = await fetch(`${API}/api/admin/stats`, { headers: authHeaders() });
+                const data = await res.json();
+                if (!data.success) return;
+                const { stats, recentAuditLogs } = data;
+
+                document.getElementById('st-users').textContent = stats.users.total;
+                document.getElementById('st-users-sub').textContent = `${stats.users.active} active`;
+                document.getElementById('st-docs').textContent = stats.documents.total;
+                document.getElementById('st-docs-sub').textContent = `${stats.documents.recentWeek} this week`;
+                document.getElementById('st-pending').textContent = stats.documents.pendingReview;
+                document.getElementById('st-suspicious').textContent = stats.documents.suspicious;
+                document.getElementById('st-critical').textContent = `${stats.risk.critical} critical`;
+                document.getElementById('st-approved').textContent = stats.documents.approved;
+                document.getElementById('st-rejected').textContent = `${stats.documents.rejected} rejected`;
+
+                const tbody = document.getElementById('recentAuditBody');
+                if (!recentAuditLogs.length) {
+                    tbody.innerHTML = `<tr><td colspan="5"><div class="empty-state"><div class="icon">📋</div><p>No recent activity</p></div></td></tr>`;
+                    return;
+                }
+                tbody.innerHTML = recentAuditLogs.map(l => `
+                    <tr>
+                        <td><code style="font-size:11px;color:#93c5fd">${l.action}</code></td>
+                        <td>${l.resource}</td>
+                        <td style="color:var(--text-muted)">${l.actorEmail || 'system'}</td>
+                        <td><span class="badge ${l.status==='SUCCESS'?'badge-green':'badge-red'}">${l.status}</span></td>
+                        <td style="color:var(--text-muted);font-size:12px">${new Date(l.createdAt).toLocaleString()}</td>
+                    </tr>
+                `).join('');
+            } catch (e) {
+                showToast('Failed to load stats', 'error');
+            }
+        }
+
+        // ─── USERS ───────────────────────────────────────────────────
+        async function loadUsers() {
+            const role = document.getElementById('filterRole')?.value || '';
+            try {
+                const res = await fetch(`${API}/api/admin/users?limit=50${role ? '&role='+role : ''}`, { headers: authHeaders() });
+                const data = await res.json();
+                if (!data.success) return;
+
+                const tbody = document.getElementById('usersBody');
+                if (!data.users.length) {
+                    tbody.innerHTML = `<tr><td colspan="6"><div class="empty-state"><div class="icon">👥</div><p>No users found</p></div></td></tr>`;
+                    return;
+                }
+
+                tbody.innerHTML = data.users.map(u => `
+                    <tr>
+                        <td><strong>${u.name}</strong><br><span style="font-size:11px;color:var(--text-muted)">${u.department || '–'}</span></td>
+                        <td style="color:var(--text-muted)">${u.email}</td>
+                        <td><span class="badge ${roleBadge(u.role)}">${u.role}</span></td>
+                        <td><span class="badge ${u.isActive ? 'badge-green' : 'badge-red'}">${u.isActive ? 'Active' : 'Inactive'}</span></td>
+                        <td style="font-size:11px;color:var(--text-muted)">${new Date(u.createdAt).toLocaleDateString()}</td>
+                        <td>
+                            <button class="btn-sm btn-primary" onclick="openEditUser('${u._id}','${u.email}','${u.role}','${u.isActive}')">Edit</button>
+                            ${!u.isActive ? '' : `<button class="btn-sm btn-danger" style="margin-left:5px" onclick="deactivateUser('${u._id}')">Deactivate</button>`}
+                        </td>
+                    </tr>
+                `).join('');
+            } catch (e) {
+                showToast('Failed to load users', 'error');
+            }
+        }
+
+        function roleBadge(role) {
+            if (role === 'ADMIN') return 'badge-purple';
+            if (role === 'REVIEWER') return 'badge-blue';
+            return 'badge-gray';
+        }
+
+        function openEditUser(id, email, role, isActive) {
+            currentUserId = id;
+            document.getElementById('editUserEmail').textContent = email;
+            document.getElementById('editRole').value = role;
+            document.getElementById('editActive').value = isActive;
+            document.getElementById('editUserModal').classList.add('open');
+        }
+
+        function closeModal() {
+            document.getElementById('editUserModal').classList.remove('open');
+            currentUserId = null;
+        }
+
+        async function saveUser() {
+            if (!currentUserId) return;
+            const role = document.getElementById('editRole').value;
+            const isActive = document.getElementById('editActive').value === 'true';
+            try {
+                const res = await fetch(`${API}/api/admin/users/${currentUserId}`, {
+                    method: 'PATCH',
+                    headers: authHeaders(),
+                    body: JSON.stringify({ role, isActive })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    showToast('User updated successfully');
+                    closeModal();
+                    loadUsers();
+                } else {
+                    showToast(data.message || 'Update failed', 'error');
+                }
+            } catch (e) {
+                showToast('Failed to update user', 'error');
+            }
+        }
+
+        async function deactivateUser(id) {
+            if (!confirm('Deactivate this user? They will no longer be able to log in.')) return;
+            try {
+                const res = await fetch(`${API}/api/admin/users/${id}`, {
+                    method: 'DELETE',
+                    headers: authHeaders()
+                });
+                const data = await res.json();
+                if (data.success) {
+                    showToast('User deactivated');
+                    loadUsers();
+                } else {
+                    showToast(data.message || 'Failed', 'error');
+                }
+            } catch (e) {
+                showToast('Error deactivating user', 'error');
+            }
+        }
+
+        // ─── DOCUMENTS ───────────────────────────────────────────────
+        async function loadDocuments() {
+            const status = document.getElementById('filterDocStatus')?.value || '';
+            try {
+                const res = await fetch(`${API}/api/admin/documents?limit=50${status ? '&reviewStatus='+status : ''}`, { headers: authHeaders() });
+                const data = await res.json();
+                if (!data.success) return;
+
+                const tbody = document.getElementById('documentsBody');
+                if (!data.documents.length) {
+                    tbody.innerHTML = `<tr><td colspan="8"><div class="empty-state"><div class="icon">📄</div><p>No documents found</p></div></td></tr>`;
+                    return;
+                }
+
+                tbody.innerHTML = data.documents.map(d => `
+                    <tr>
+                        <td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${d.fileName}">${d.fileName}</td>
+                        <td style="font-size:12px;color:var(--text-muted)">${d.user?.name || '–'}<br>${d.user?.email || ''}</td>
+                        <td><code style="font-size:11px;color:#93c5fd">${d.documentType}</code></td>
+                        <td>${validBadge(d.validationStatus)}</td>
+                        <td>${riskBadge(d.riskLevel)} <span style="font-size:11px;color:var(--text-muted)">${d.riskScore || 0}</span></td>
+                        <td>${fakeBadge(d.fakeDocumentStatus)}</td>
+                        <td>${reviewBadge(d.reviewStatus)}</td>
+                        <td style="font-size:11px;color:var(--text-muted)">${new Date(d.uploadedAt || d.createdAt).toLocaleDateString()}</td>
+                    </tr>
+                `).join('');
+            } catch (e) {
+                showToast('Failed to load documents', 'error');
+            }
+        }
+
+        function validBadge(s) {
+            const m = { VALIDATED:'badge-green', REJECTED:'badge-red', NEEDS_REVIEW:'badge-yellow', PENDING:'badge-gray' };
+            return `<span class="badge ${m[s]||'badge-gray'}">${s||'–'}</span>`;
+        }
+        function riskBadge(r) {
+            const m = { CRITICAL:'badge-red', HIGH:'badge-yellow', MEDIUM:'badge-blue', LOW:'badge-green' };
+            return `<span class="badge ${m[r]||'badge-gray'}">${r||'–'}</span>`;
+        }
+        function fakeBadge(s) {
+            return `<span class="badge ${s==='SUSPICIOUS'?'badge-red':s==='GENUINE'?'badge-green':'badge-gray'}">${s||'–'}</span>`;
+        }
+        function reviewBadge(s) {
+            const m = { APPROVED:'badge-green', REJECTED:'badge-red', FALSE_POSITIVE:'badge-blue', PENDING:'badge-yellow' };
+            return `<span class="badge ${m[s]||'badge-gray'}">${s||'–'}</span>`;
+        }
+
+        // ─── AUDIT LOGS ──────────────────────────────────────────────
+        async function loadAudit() {
+            try {
+                const res = await fetch(`${API}/api/admin/audit-logs?limit=100`, { headers: authHeaders() });
+                const data = await res.json();
+                if (!data.success) return;
+
+                const tbody = document.getElementById('auditBody');
+                if (!data.logs.length) {
+                    tbody.innerHTML = `<tr><td colspan="8"><div class="empty-state"><div class="icon">📋</div><p>No audit logs found</p></div></td></tr>`;
+                    return;
+                }
+
+                tbody.innerHTML = data.logs.map(l => `
+                    <tr>
+                        <td><code style="font-size:11px;color:#93c5fd">${l.action}</code></td>
+                        <td>${l.resource}</td>
+                        <td style="font-size:11px;color:var(--text-muted);font-family:monospace">${l.resourceId ? l.resourceId.slice(-8)+'...' : '–'}</td>
+                        <td style="font-size:12px">${l.actor?.name || l.actorEmail || 'system'}</td>
+                        <td><span class="badge ${roleBadge(l.actorRole)}">${l.actorRole}</span></td>
+                        <td><span class="badge ${l.status==='SUCCESS'?'badge-green':'badge-red'}">${l.status}</span></td>
+                        <td style="font-size:11px;color:var(--text-muted);font-family:monospace">${l.ipAddress || '–'}</td>
+                        <td style="font-size:11px;color:var(--text-muted)">${new Date(l.createdAt).toLocaleString()}</td>
+                    </tr>
+                `).join('');
+            } catch (e) {
+                showToast('Failed to load audit logs', 'error');
+            }
+        }
+
+        // Init
+        loadStats();
+    </script>
+</body>
+</html>

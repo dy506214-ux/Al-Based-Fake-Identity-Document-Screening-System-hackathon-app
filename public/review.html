@@ -1,0 +1,649 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document Review – SIH26188</title>
+    <meta name="description" content="Human review queue for AI-based document screening decisions">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --bg: #080d18;
+            --surface: #0f1724;
+            --surface2: #162035;
+            --surface3: #1c2a42;
+            --accent: #3b82f6;
+            --accent2: #6366f1;
+            --success: #10b981;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --text: #f1f5f9;
+            --text-muted: #64748b;
+            --text-dim: #94a3b8;
+            --border: #1a2840;
+            --radius: 12px;
+        }
+
+        body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; display: flex; }
+
+        .sidebar {
+            width: 240px;
+            background: var(--surface);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            position: fixed;
+            top: 0; left: 0; bottom: 0;
+            z-index: 100;
+        }
+
+        .sidebar-logo {
+            padding: 22px 20px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .sidebar-logo .icon {
+            width: 38px; height: 38px;
+            background: linear-gradient(135deg, var(--accent2), var(--accent));
+            border-radius: 10px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 18px;
+        }
+
+        .sidebar-logo h1 { font-size: 14px; font-weight: 700; line-height: 1.2; }
+        .sidebar-logo p  { font-size: 10px; color: var(--text-muted); margin-top: 2px; }
+
+        .sidebar-nav { padding: 16px 12px; flex: 1; }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 13.5px;
+            font-weight: 500;
+            color: var(--text-dim);
+            text-decoration: none;
+            border: 1px solid transparent;
+            margin-bottom: 4px;
+            transition: all 0.18s;
+        }
+
+        .nav-item:hover { background: var(--surface2); color: var(--text); }
+        .nav-item.active { background: rgba(59,130,246,0.14); color: var(--accent); border-color: rgba(59,130,246,0.2); }
+
+        .sidebar-footer {
+            padding: 16px;
+            border-top: 1px solid var(--border);
+        }
+
+        .user-chip {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 12px;
+            background: var(--surface2);
+            border-radius: 10px;
+        }
+
+        .avatar {
+            width: 32px; height: 32px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--accent2), var(--accent));
+            display: flex; align-items: center; justify-content: center;
+            font-size: 13px; font-weight: 700;
+        }
+
+        .user-info { flex: 1; }
+        .user-info .name { font-size: 12px; font-weight: 600; }
+        .user-info .role { font-size: 10px; color: var(--accent); }
+
+        .logout-btn {
+            background: none; border: none; color: var(--text-muted); cursor: pointer;
+            font-size: 16px; padding: 4px; border-radius: 6px; transition: all 0.15s;
+        }
+        .logout-btn:hover { color: var(--danger); }
+
+        .main { margin-left: 240px; flex: 1; display: flex; flex-direction: column; }
+
+        .topbar {
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
+            padding: 16px 28px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky; top: 0; z-index: 50;
+        }
+
+        .page-title { font-size: 18px; font-weight: 700; }
+        .page-sub   { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+
+        .content { padding: 28px; flex: 1; display: grid; grid-template-columns: 350px 1fr; gap: 24px; align-items: start; }
+
+        /* QUEUE PANEL */
+        .queue-panel {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            overflow: hidden;
+        }
+
+        .panel-header {
+            padding: 16px 18px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .panel-title { font-size: 14px; font-weight: 600; }
+
+        .count-badge {
+            background: rgba(239,68,68,0.15);
+            color: #fca5a5;
+            border: 1px solid rgba(239,68,68,0.3);
+            border-radius: 20px;
+            padding: 2px 10px;
+            font-size: 11px;
+            font-weight: 700;
+        }
+
+        .queue-list { max-height: calc(100vh - 200px); overflow-y: auto; }
+
+        .queue-item {
+            padding: 14px 18px;
+            border-bottom: 1px solid rgba(26,40,64,0.6);
+            cursor: pointer;
+            transition: all 0.18s;
+        }
+
+        .queue-item:last-child { border-bottom: none; }
+        .queue-item:hover { background: var(--surface2); }
+        .queue-item.selected { background: rgba(59,130,246,0.1); border-left: 3px solid var(--accent); }
+
+        .qi-name { font-size: 13px; font-weight: 600; margin-bottom: 4px; }
+        .qi-meta { font-size: 11px; color: var(--text-muted); display: flex; gap: 8px; flex-wrap: wrap; }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 2px 8px;
+            border-radius: 20px;
+            font-size: 10px;
+            font-weight: 600;
+        }
+
+        .badge-red    { background: rgba(239,68,68,0.15);  color: #fca5a5; border: 1px solid rgba(239,68,68,0.25); }
+        .badge-yellow { background: rgba(245,158,11,0.15); color: #fcd34d; border: 1px solid rgba(245,158,11,0.25); }
+        .badge-green  { background: rgba(16,185,129,0.15); color: #6ee7b7; border: 1px solid rgba(16,185,129,0.25); }
+        .badge-blue   { background: rgba(59,130,246,0.15); color: #93c5fd; border: 1px solid rgba(59,130,246,0.25); }
+        .badge-gray   { background: rgba(100,116,139,0.15);color: #94a3b8; border: 1px solid rgba(100,116,139,0.25); }
+
+        /* DETAIL PANEL */
+        .detail-panel {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+        }
+
+        .detail-empty {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 400px;
+            color: var(--text-muted);
+            gap: 12px;
+        }
+
+        .detail-empty .icon { font-size: 48px; }
+        .detail-empty p { font-size: 14px; }
+
+        .detail-content { padding: 24px; }
+
+        .detail-header { margin-bottom: 24px; }
+        .detail-header h2 { font-size: 18px; font-weight: 700; margin-bottom: 6px; }
+        .detail-header .meta { font-size: 12px; color: var(--text-muted); display: flex; flex-wrap: wrap; gap: 12px; }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .info-card {
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 14px;
+        }
+
+        .info-card-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); margin-bottom: 8px; font-weight: 600; }
+        .info-card-value { font-size: 22px; font-weight: 700; margin-bottom: 4px; }
+        .info-card-sub   { font-size: 12px; color: var(--text-muted); }
+
+        .flags-section { margin-bottom: 24px; }
+        .flags-title { font-size: 13px; font-weight: 600; margin-bottom: 10px; }
+        .flag-list { display: flex; flex-direction: column; gap: 8px; }
+        .flag-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            padding: 10px 14px;
+            background: rgba(239,68,68,0.07);
+            border: 1px solid rgba(239,68,68,0.18);
+            border-radius: 8px;
+            font-size: 12px;
+        }
+
+        .extracted-section { margin-bottom: 24px; }
+        .extracted-title { font-size: 13px; font-weight: 600; margin-bottom: 10px; }
+        .extracted-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+
+        .field-row { display: flex; flex-direction: column; gap: 2px; }
+        .field-label { font-size: 10px; color: var(--text-muted); text-transform: uppercase; font-weight: 600; letter-spacing: 0.3px; }
+        .field-value { font-size: 13px; font-weight: 500; }
+
+        .decision-section {
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 20px;
+        }
+
+        .decision-title { font-size: 14px; font-weight: 700; margin-bottom: 16px; }
+
+        textarea {
+            width: 100%;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 12px 14px;
+            color: var(--text);
+            font-family: inherit;
+            font-size: 13px;
+            resize: vertical;
+            min-height: 80px;
+            outline: none;
+            transition: border-color 0.2s;
+            margin-bottom: 16px;
+        }
+
+        textarea:focus { border-color: var(--accent); }
+
+        .decision-buttons { display: flex; gap: 10px; }
+
+        .btn-approve {
+            flex: 1;
+            padding: 11px;
+            background: rgba(16,185,129,0.15);
+            color: #6ee7b7;
+            border: 1px solid rgba(16,185,129,0.3);
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            font-family: inherit;
+            transition: all 0.2s;
+        }
+        .btn-approve:hover { background: rgba(16,185,129,0.25); }
+
+        .btn-reject {
+            flex: 1;
+            padding: 11px;
+            background: rgba(239,68,68,0.15);
+            color: #fca5a5;
+            border: 1px solid rgba(239,68,68,0.3);
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            font-family: inherit;
+            transition: all 0.2s;
+        }
+        .btn-reject:hover { background: rgba(239,68,68,0.25); }
+
+        .btn-fp {
+            flex: 1;
+            padding: 11px;
+            background: rgba(59,130,246,0.15);
+            color: #93c5fd;
+            border: 1px solid rgba(59,130,246,0.3);
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            font-family: inherit;
+            transition: all 0.2s;
+        }
+        .btn-fp:hover { background: rgba(59,130,246,0.25); }
+
+        .toast {
+            position: fixed;
+            bottom: 24px; right: 24px;
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 14px 20px;
+            font-size: 13px;
+            z-index: 2000;
+            transform: translateY(80px);
+            opacity: 0;
+            transition: all 0.3s ease;
+            max-width: 320px;
+        }
+        .toast.show { transform: translateY(0); opacity: 1; }
+        .toast.success { border-color: rgba(16,185,129,0.4); color: #6ee7b7; }
+        .toast.error   { border-color: rgba(239,68,68,0.4);  color: #fca5a5; }
+
+        .empty-state { text-align:center; padding:40px; color:var(--text-muted); }
+        .empty-state .icon { font-size:36px; margin-bottom:10px; }
+        .empty-state p { font-size:13px; }
+    </style>
+</head>
+<body>
+    <aside class="sidebar">
+        <div class="sidebar-logo">
+            <div class="icon">🛡️</div>
+            <div>
+                <h1>SIH26188</h1>
+                <p>Review Queue</p>
+            </div>
+        </div>
+        <nav class="sidebar-nav">
+            <a class="nav-item" href="/dashboard.html">
+                <span>📊</span> Dashboard
+            </a>
+            <a class="nav-item active">
+                <span>🔍</span> Review Queue
+            </a>
+        </nav>
+        <div class="sidebar-footer">
+            <div class="user-chip">
+                <div class="avatar" id="avatarInitial">R</div>
+                <div class="user-info">
+                    <div class="name" id="userName">Loading...</div>
+                    <div class="role" id="userRole">REVIEWER</div>
+                </div>
+                <button class="logout-btn" onclick="logout()" title="Logout">⏏</button>
+            </div>
+        </div>
+    </aside>
+
+    <main class="main">
+        <div class="topbar">
+            <div>
+                <div class="page-title">Human Review Queue</div>
+                <div class="page-sub">Review flagged documents and make final decisions</div>
+            </div>
+            <div>
+                <button onclick="loadQueue()" style="padding:8px 16px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text-dim);font-size:13px;cursor:pointer;font-family:inherit;">
+                    ↻ Refresh Queue
+                </button>
+            </div>
+        </div>
+
+        <div class="content">
+            <!-- QUEUE LIST -->
+            <div class="queue-panel">
+                <div class="panel-header">
+                    <div class="panel-title">⏳ Pending Reviews</div>
+                    <div class="count-badge" id="queueCount">0</div>
+                </div>
+                <div class="queue-list" id="queueList">
+                    <div class="empty-state">
+                        <div class="icon">⏳</div>
+                        <p>Loading queue...</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- DETAIL PANEL -->
+            <div class="detail-panel">
+                <div id="detailEmpty" class="detail-empty">
+                    <div class="icon">🔍</div>
+                    <p>Select a document from the queue to begin review</p>
+                </div>
+
+                <div id="detailContent" class="detail-content" style="display:none">
+                    <div class="detail-header">
+                        <h2 id="detailTitle">Document Review</h2>
+                        <div class="meta" id="detailMeta"></div>
+                    </div>
+
+                    <div class="info-grid">
+                        <div class="info-card">
+                            <div class="info-card-label">Risk Score</div>
+                            <div class="info-card-value" id="riskScore">–</div>
+                            <div class="info-card-sub" id="riskLevel">–</div>
+                        </div>
+                        <div class="info-card">
+                            <div class="info-card-label">Validation Status</div>
+                            <div class="info-card-value" id="valStatus">–</div>
+                            <div class="info-card-sub" id="fakeStatus">–</div>
+                        </div>
+                    </div>
+
+                    <div class="extracted-section" id="extractedSection" style="display:none">
+                        <div class="extracted-title">📋 Extracted Document Data</div>
+                        <div class="extracted-grid" id="extractedGrid"></div>
+                    </div>
+
+                    <div class="flags-section" id="flagsSection" style="display:none">
+                        <div class="flags-title">⚠️ Risk Flags</div>
+                        <div class="flag-list" id="flagsList"></div>
+                    </div>
+
+                    <div class="decision-section">
+                        <div class="decision-title">✍️ Review Decision</div>
+                        <textarea id="reviewComment" placeholder="Add review notes, observations, or reasons for your decision (optional)..."></textarea>
+                        <div class="decision-buttons">
+                            <button class="btn-approve" onclick="submitDecision('APPROVED')">✅ Approve</button>
+                            <button class="btn-fp"      onclick="submitDecision('FALSE_POSITIVE')">↩️ False Positive</button>
+                            <button class="btn-reject"  onclick="submitDecision('REJECTED')">❌ Reject</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <div class="toast" id="toast"></div>
+
+    <script>
+        const API = '';
+        let token = localStorage.getItem('token');
+        let currentDocId = null;
+
+        if (!token) { window.location.href = '/index.html'; }
+
+        const user = JSON.parse(localStorage.getItem('user') || '{}');
+        if (user.name) {
+            document.getElementById('userName').textContent = user.name;
+            document.getElementById('userRole').textContent = user.role || 'REVIEWER';
+            document.getElementById('avatarInitial').textContent = user.name[0].toUpperCase();
+        }
+
+        function authHeaders() {
+            return { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' };
+        }
+
+        function logout() {
+            localStorage.clear();
+            window.location.href = '/index.html';
+        }
+
+        function showToast(msg, type = 'success') {
+            const t = document.getElementById('toast');
+            t.textContent = msg;
+            t.className = `toast ${type} show`;
+            setTimeout(() => { t.className = 'toast'; }, 3500);
+        }
+
+        function riskColor(level) {
+            if (level === 'CRITICAL') return '#ef4444';
+            if (level === 'HIGH') return '#f59e0b';
+            if (level === 'MEDIUM') return '#3b82f6';
+            return '#10b981';
+        }
+
+        async function loadQueue() {
+            try {
+                const res = await fetch(`${API}/api/documents/review/pending`, { headers: authHeaders() });
+                const data = await res.json();
+
+                const list = document.getElementById('queueList');
+                document.getElementById('queueCount').textContent = data.count || 0;
+
+                if (!data.success || !data.documents?.length) {
+                    list.innerHTML = `<div class="empty-state"><div class="icon">✅</div><p>No pending reviews — all caught up!</p></div>`;
+                    return;
+                }
+
+                list.innerHTML = data.documents.map(d => `
+                    <div class="queue-item" id="qi-${d._id}" onclick="loadDetail('${d._id}')">
+                        <div class="qi-name">${d.fileName}</div>
+                        <div class="qi-meta">
+                            <span>${d.user?.name || '–'}</span>
+                            <span class="badge badge-${riskClass(d.riskLevel)}">${d.riskLevel || 'LOW'}</span>
+                            <span class="badge ${d.fakeDocumentStatus==='SUSPICIOUS'?'badge-red':'badge-gray'}">${d.fakeDocumentStatus || '–'}</span>
+                        </div>
+                    </div>
+                `).join('');
+            } catch (e) {
+                document.getElementById('queueList').innerHTML = `<div class="empty-state"><p>Failed to load queue</p></div>`;
+            }
+        }
+
+        function riskClass(level) {
+            if (level === 'CRITICAL' || level === 'HIGH') return 'red';
+            if (level === 'MEDIUM') return 'yellow';
+            return 'green';
+        }
+
+        async function loadDetail(id) {
+            currentDocId = id;
+
+            // Highlight selected
+            document.querySelectorAll('.queue-item').forEach(el => el.classList.remove('selected'));
+            document.getElementById(`qi-${id}`)?.classList.add('selected');
+
+            try {
+                const res = await fetch(`${API}/api/documents/review/${id}`, { headers: authHeaders() });
+                const data = await res.json();
+
+                if (!data.success) {
+                    showToast('Failed to load document', 'error');
+                    return;
+                }
+
+                const d = data.document;
+
+                document.getElementById('detailEmpty').style.display = 'none';
+                document.getElementById('detailContent').style.display = '';
+
+                document.getElementById('detailTitle').textContent = d.fileName;
+                document.getElementById('detailMeta').innerHTML = `
+                    <span>📁 ${d.documentType}</span>
+                    <span>👤 ${d.user?.name || '–'} (${d.user?.email || '–'})</span>
+                    <span>📅 ${new Date(d.uploadedAt || d.createdAt).toLocaleDateString()}</span>
+                `;
+
+                // Risk Score
+                const rsEl = document.getElementById('riskScore');
+                rsEl.textContent = d.riskScore || 0;
+                rsEl.style.color = riskColor(d.riskLevel);
+                document.getElementById('riskLevel').textContent = `${d.riskLevel || 'LOW'} RISK`;
+
+                document.getElementById('valStatus').textContent = d.validationStatus || '–';
+                document.getElementById('fakeStatus').textContent = `Fake Detection: ${d.fakeDocumentStatus || '–'}`;
+
+                // Extracted Data
+                const ext = d.extractedData;
+                const extSection = document.getElementById('extractedSection');
+                const extGrid = document.getElementById('extractedGrid');
+                if (ext && Object.keys(ext).length > 0) {
+                    const fields = ['name', 'passportNumber', 'aadhaarNumber', 'panNumber',
+                                    'dateOfBirth', 'dateOfExpiry', 'nationality', 'gender', 'address'];
+                    extGrid.innerHTML = fields
+                        .filter(f => ext[f])
+                        .map(f => `
+                            <div class="field-row">
+                                <div class="field-label">${f.replace(/([A-Z])/g,' $1').trim()}</div>
+                                <div class="field-value">${ext[f] || '–'}</div>
+                            </div>
+                        `).join('');
+                    extSection.style.display = extGrid.innerHTML ? '' : 'none';
+                } else {
+                    extSection.style.display = 'none';
+                }
+
+                // Risk Flags
+                const flagsSection = document.getElementById('flagsSection');
+                const flagsList = document.getElementById('flagsList');
+                const flags = d.riskReasons || [];
+                if (flags.length > 0) {
+                    flagsList.innerHTML = flags.map(f => `
+                        <div class="flag-item">
+                            <span>⚠️</span>
+                            <span>${f}</span>
+                        </div>
+                    `).join('');
+                    flagsSection.style.display = '';
+                } else {
+                    flagsSection.style.display = 'none';
+                }
+
+                document.getElementById('reviewComment').value = '';
+            } catch (e) {
+                showToast('Error loading document details', 'error');
+            }
+        }
+
+        async function submitDecision(decision) {
+            if (!currentDocId) return;
+            const comment = document.getElementById('reviewComment').value.trim();
+
+            try {
+                const res = await fetch(`${API}/api/documents/review/${currentDocId}/decision`, {
+                    method: 'POST',
+                    headers: authHeaders(),
+                    body: JSON.stringify({ reviewDecision: decision, reviewComment: comment })
+                });
+                const data = await res.json();
+
+                if (data.success) {
+                    const labels = { APPROVED: 'approved ✅', REJECTED: 'rejected ❌', FALSE_POSITIVE: 'marked as false positive ↩️' };
+                    showToast(`Document ${labels[decision]}`);
+
+                    // Hide detail panel, reload queue
+                    document.getElementById('detailContent').style.display = 'none';
+                    document.getElementById('detailEmpty').style.display = '';
+                    currentDocId = null;
+                    setTimeout(loadQueue, 500);
+                } else {
+                    showToast(data.message || 'Failed to submit review', 'error');
+                }
+            } catch (e) {
+                showToast('Network error submitting decision', 'error');
+            }
+        }
+
+        loadQueue();
+    </script>
+</body>
+</html>
