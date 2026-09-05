@@ -13,6 +13,15 @@ const { errorHandler, notFoundHandler } = require('./middleware/errorMiddleware'
 
 const app = express();
 
+// ─── CORS SETUP (Must be very top to handle OPTIONS preflight properly) ──────
+app.use(cors({
+  origin: true,
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
+app.options('*', cors());
+
 // ─── SECURITY MIDDLEWARE ──────────────────────────────────────────────────────
 let helmet, rateLimit, mongoSanitize;
 
@@ -25,22 +34,6 @@ if (helmet) {
         contentSecurityPolicy: false // Allow inline scripts for admin panel
     }));
 }
-
-// CORS — restrict to allowed origins in production
-const allowedOrigins = process.env.CORS_ORIGIN
-    ? process.env.CORS_ORIGIN.split(',').map(s => s.trim())
-    : ['http://localhost:3000', 'http://127.0.0.1:3000'];
-
-app.use(cors({
-    origin: (origin, callback) => {
-        if (!origin || allowedOrigins.includes(origin) || process.env.NODE_ENV !== 'production') {
-            callback(null, true);
-        } else {
-            callback(new Error('Not allowed by CORS'));
-        }
-    },
-    credentials: true
-}));
 
 // Body parsing with size limits
 app.use(express.json({ limit: '2mb' }));
