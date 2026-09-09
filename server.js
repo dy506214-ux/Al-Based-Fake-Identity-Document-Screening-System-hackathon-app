@@ -22,25 +22,66 @@ try { mongoSanitize = require('express-mongo-sanitize'); } catch (_) { console.w
 
 if (helmet) {
     app.use(helmet({
-        contentSecurityPolicy: false // Allow inline scripts for admin panel
+        contentSecurityPolicy: false, // Allow inline scripts for admin panel
+        crossOriginResourcePolicy: { policy: 'cross-origin' }
     }));
 }
 
-// CORS — restrict to allowed origins in production
-const allowedOrigins = process.env.CORS_ORIGIN
-    ? process.env.CORS_ORIGIN.split(',').map(s => s.trim())
-    : ['http://localhost:3000', 'http://127.0.0.1:3000'];
+// ─── PRODUCTION CENTRALIZED CORS CONFIGURATION ───────────────────────────
+// Supports local Flutter Web development on any localhost/127.0.0.1 port,
+// plus production deployed origins (configured via CORS_ORIGIN or default).
+const allowedOrigins = [
+    'https://sih26188-backend.onrender.com',
+    'http://localhost:3000',
+    'http://127.0.0.1:3000',
+    ...(process.env.CORS_ORIGIN ? process.env.CORS_ORIGIN.split(',').map(s => s.trim()).filter(Boolean) : [])
+];
 
-app.use(cors({
+// Regex strictly matching localhost or 127.0.0.1 on any HTTP development port (Flutter Web, Vite, React, etc.)
+const LOCALHOST_REGEX = /^http:\/\/(localhost|127\.0\.0\.1)(:[0-9]{1,5})?$/;
+
+const corsOptions = {
     origin: (origin, callback) => {
-        if (!origin || allowedOrigins.includes(origin) || process.env.NODE_ENV !== 'production') {
-            callback(null, true);
-        } else {
-            callback(new Error('Not allowed by CORS'));
+        // 1. Allow mobile native apps, curl, Postman, server-to-server requests (no Origin header)
+        if (!origin) {
+            return callback(null, true);
         }
+
+        // 2. Allow configured production origins
+        if (allowedOrigins.includes(origin)) {
+            return callback(null, true);
+        }
+
+        // 3. Allow any local development port on localhost or 127.0.0.1 (e.g. Flutter Web dev server)
+        if (LOCALHOST_REGEX.test(origin)) {
+            return callback(null, true);
+        }
+
+        // 4. In development mode, allow all origins
+        if (process.env.NODE_ENV !== 'production') {
+            return callback(null, true);
+        }
+
+        // 5. Explicitly reject untrusted cross-origin requests cleanly (null, false)
+        return callback(null, false);
     },
-    credentials: true
-}));
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: [
+        'Origin',
+        'X-Requested-With',
+        'Content-Type',
+        'Accept',
+        'Authorization',
+        'X-Device-Id',
+        'X-Client-Version'
+    ],
+    exposedHeaders: ['Content-Range', 'X-Content-Range'],
+    optionsSuccessStatus: 200 // Ensure 200 OK for legacy browser preflights
+};
+
+// Register centralized CORS middleware
+app.use(cors(corsOptions));
 
 // Body parsing with size limits
 app.use(express.json({ limit: '2mb' }));
