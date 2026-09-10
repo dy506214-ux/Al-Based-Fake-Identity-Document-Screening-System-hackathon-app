@@ -65,7 +65,15 @@ const documentSchema = new mongoose.Schema(
         },
         reviewDecision: {
             type: String,
-            enum: ['APPROVED', 'REJECTED','FALSE_POSITIVE'],
+            enum: ['APPROVED', 'REJECTED', 'FALSE_POSITIVE', 'REVIEW_REQUIRED', 'PENDING', null],
+            default: null
+        },
+        fileData: {
+            type: Buffer,
+            default: null
+        },
+        fileContentType: {
+            type: String,
             default: null
         },
         reviewComment: {
@@ -113,4 +121,4 @@ documentSchema.index({ reviewStatus: 1 });
 documentSchema.index({ riskLevel: 1 });
 documentSchema.index({ uploadedAt: -1 });
 
-module.exports = mongoose.model('Document', documentSchema);
+module.exports = mongoose.model('Document', documentSchema);

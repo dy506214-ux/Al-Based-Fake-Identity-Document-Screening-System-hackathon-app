@@ -23,12 +23,19 @@ const uploadDocument = async (req, res) => {
 
         const documentType = req.body.documentType || 'passport';
 
+        let fileBuffer = null;
+        try {
+            fileBuffer = fs.readFileSync(req.file.path);
+        } catch (_) {}
+
         const document = await Document.create({
             user: req.user.id || req.user._id,
             fileName: req.file.originalname,
             filePath: req.file.path,
             documentType: documentType,
-            ocrStatus: 'PENDING'
+            ocrStatus: 'PENDING',
+            fileData: fileBuffer,
+            fileContentType: req.file.mimetype
         });
 
         // Run initial OCR text extraction
@@ -135,12 +142,21 @@ const getDocument = async (req, res) => {
             });
         }
 
-        const filePath = path.resolve(document.filePath);
+        let filePath = path.resolve(document.filePath);
         if (!fs.existsSync(filePath)) {
-            return res.status(404).json({
-                success: false,
-                message: 'Document file not found on storage'
-            });
+            if (document.fileData) {
+                const uploadsDir = path.dirname(filePath);
+                if (!fs.existsSync(uploadsDir)) {
+                    fs.mkdirSync(uploadsDir, { recursive: true });
+                }
+                fs.writeFileSync(filePath, document.fileData);
+                console.log([STORAGE] Restored document file from MongoDB Atlas: );
+            } else {
+                return res.status(404).json({
+                    success: false,
+                    message: 'Document file not found on storage'
+                });
+            }
         }
 
         res.sendFile(filePath);
@@ -233,14 +249,23 @@ const processOCR = async (req, res) => {
         document.ocrStatus = 'PENDING';
         await document.save();
 
-        const filePath = path.resolve(document.filePath);
+        let filePath = path.resolve(document.filePath);
         if (!fs.existsSync(filePath)) {
-            document.ocrStatus = 'FAILED';
-            await document.save();
-            return res.status(404).json({
-                success: false,
-                message: 'Document file missing on disk'
-            });
+            if (document.fileData) {
+                const uploadsDir = path.dirname(filePath);
+                if (!fs.existsSync(uploadsDir)) {
+                    fs.mkdirSync(uploadsDir, { recursive: true });
+                }
+                fs.writeFileSync(filePath, document.fileData);
+                console.log([STORAGE] Restored document file from MongoDB Atlas: );
+            } else {
+                document.ocrStatus = 'FAILED';
+                await document.save();
+                return res.status(404).json({
+                    success: false,
+                    message: 'Document file missing on disk'
+                });
+            }
         }
 
         const ocrText = await extractText(filePath);

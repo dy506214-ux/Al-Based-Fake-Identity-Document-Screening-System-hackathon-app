@@ -79,13 +79,22 @@ const verifyDocumentFace = async (req, res) => {
             });
         }
 
-        const documentPath = path.resolve(document.filePath);
+        let documentPath = path.resolve(document.filePath);
         if (!fs.existsSync(documentPath)) {
-            if (fs.existsSync(selfiePath)) fs.unlinkSync(selfiePath);
-            return res.status(404).json({
-                success: false,
-                message: 'Document file not found on storage'
-            });
+            if (document.fileData) {
+                const uploadsDir = path.dirname(documentPath);
+                if (!fs.existsSync(uploadsDir)) {
+                    fs.mkdirSync(uploadsDir, { recursive: true });
+                }
+                fs.writeFileSync(documentPath, document.fileData);
+                console.log([STORAGE] Restored document file for Face Verification: );
+            } else {
+                if (fs.existsSync(selfiePath)) fs.unlinkSync(selfiePath);
+                return res.status(404).json({
+                    success: false,
+                    message: 'Document file not found on storage'
+                });
+            }
         }
 
         // Compare document portrait with selfie
