@@ -31,14 +31,15 @@ if (helmet) {
 // Supports local Flutter Web development on any localhost/127.0.0.1 port,
 // plus production deployed origins (configured via CORS_ORIGIN or default).
 const allowedOrigins = [
+    'https://sih26188-g7f9.onrender.com',
     'https://sih26188-backend.onrender.com',
     'http://localhost:3000',
     'http://127.0.0.1:3000',
     ...(process.env.CORS_ORIGIN ? process.env.CORS_ORIGIN.split(',').map(s => s.trim()).filter(Boolean) : [])
 ];
 
-// Regex strictly matching localhost or 127.0.0.1 on any HTTP development port (Flutter Web, Vite, React, etc.)
-const LOCALHOST_REGEX = /^http:\/\/(localhost|127\.0\.0\.1)(:[0-9]{1,5})?$/;
+// Regex strictly matching localhost or 127.0.0.1 on any HTTP/HTTPS development port (Flutter Web, Vite, React, etc.)
+const LOCALHOST_REGEX = /^https?:\/\/(localhost|127\.0\.0\.1)(:[0-9]{1,5})?$/;
 
 const corsOptions = {
     origin: (origin, callback) => {
@@ -47,8 +48,8 @@ const corsOptions = {
             return callback(null, true);
         }
 
-        // 2. Allow configured production origins
-        if (allowedOrigins.includes(origin)) {
+        // 2. Allow wildcard or configured production origins
+        if (allowedOrigins.includes('*') || process.env.CORS_ORIGIN === '*' || allowedOrigins.includes(origin)) {
             return callback(null, true);
         }
 
@@ -82,6 +83,7 @@ const corsOptions = {
 
 // Register centralized CORS middleware
 app.use(cors(corsOptions));
+app.options('*', cors(corsOptions));
 
 // Body parsing with size limits
 app.use(express.json({ limit: '2mb' }));
@@ -129,7 +131,21 @@ if (rateLimit) {
 }
 
 // ─── HEALTH CHECK (must be before static so it is never shadowed) ─────────────
-app.get('/api/health', (req, res) => {
+const healthHandler = (req, res) => {
+    res.json({
+        success: true,
+        status: 'healthy',
+        service: 'SIH26188 - AI Fake Identity & Document Screening System',
+        version: '1.0.0',
+        timestamp: new Date().toISOString(),
+        uptime: process.uptime(),
+        environment: process.env.NODE_ENV || 'development'
+    });
+};
+app.get('/health', healthHandler);
+app.get('/api/health', healthHandler);
+app.get('/_health', healthHandler);
+const unusedHealth = (req, res) => {
     res.json({
         success: true,
         status: 'healthy',
